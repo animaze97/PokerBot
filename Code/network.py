@@ -57,6 +57,7 @@ class Network(object):
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
         for b, w in zip(self.biases, self.weights):
+            # print "W size: ", w.size, "Activation size: ", activation.size
             z = np.dot(w, activation)+b
             zs.append(z)
             activation = sigmoid(z)

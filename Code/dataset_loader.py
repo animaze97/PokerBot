@@ -28,7 +28,7 @@ def vectorized_result_x(suit, rank):
 
 def vectorized_result_y(hand):
     e = np.zeros(10)
-    e[hand-1] = 1
+    e[hand] = 1
     return e
 
 def findX(x):

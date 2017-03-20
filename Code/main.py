@@ -21,4 +21,4 @@ test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing.csv')
 
 net = network2.Network([85, 20, 20, 10], cost=network2.CrossEntropyCost)
 net.large_weight_initializer()
-net.SGD(training_data, 30, 10, 3.0, evaluation_data=test_data, monitor_evaluation_accuracy=True)
+net.SGD(training_data, 100, 10, 0.5,lmbda=0.5, evaluation_data=test_data, monitor_evaluation_accuracy=True)

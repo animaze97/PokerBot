@@ -19,6 +19,7 @@ import sys
 
 # Third-party libraries
 import numpy as np
+import time
 
 
 #### Define the quadratic and cross-entropy cost functions
@@ -156,6 +157,8 @@ class Network(object):
         n = len(training_data)
         evaluation_cost, evaluation_accuracy = [], []
         training_cost, training_accuracy = [], []
+
+        startTime = time.time()
         for j in xrange(epochs):
             random.shuffle(training_data)
             mini_batches = [
@@ -183,7 +186,8 @@ class Network(object):
                 evaluation_accuracy.append(accuracy)
                 print "Accuracy on evaluation data: {} / {}".format(
                     self.accuracy(evaluation_data), n_data)
-            print
+            print time.time()-startTime
+            startTime = time.time()
         return evaluation_cost, evaluation_accuracy, \
             training_cost, training_accuracy
 

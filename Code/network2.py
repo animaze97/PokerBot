@@ -175,8 +175,8 @@ class Network(object):
             if monitor_training_accuracy:
                 accuracy = self.accuracy(training_data, convert=True)
                 training_accuracy.append(accuracy)
-                print "Accuracy on training data: {} / {}".format(
-                    accuracy, n)
+                print "Accuracy on training data: {} / {} :{}".format(
+                    accuracy, n, float(accuracy*100)/n)
             if monitor_evaluation_cost:
                 cost = self.total_cost(evaluation_data, lmbda, convert=True)
                 evaluation_cost.append(cost)
@@ -184,8 +184,8 @@ class Network(object):
             if monitor_evaluation_accuracy:
                 accuracy = self.accuracy(evaluation_data)
                 evaluation_accuracy.append(accuracy)
-                print "Accuracy on evaluation data: {} / {}".format(
-                    self.accuracy(evaluation_data), n_data)
+                print "Accuracy on evaluation data: {} / {} : {}".format(
+                    accuracy, n_data,  float(accuracy*100)/n_data)
             print time.time()-startTime
             startTime = time.time()
         return evaluation_cost, evaluation_accuracy, \

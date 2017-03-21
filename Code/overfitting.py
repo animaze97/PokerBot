@@ -52,9 +52,9 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     # Make results more easily reproducible
     random.seed(12345678)
     np.random.seed(12345678)
-    training_data = dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true.csv')
-    test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing.csv')
-    net = network2.Network([784, 30, 10], cost=network2.CrossEntropyCost())
+    training_data = dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true 0 1 Scaled.csv')
+    test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing 0 1 Scaled.csv')
+    net = network2.Network([85, 20, 20, 10], cost=network2.CrossEntropyCost())
     net.large_weight_initializer()
     test_cost, test_accuracy, training_cost, training_accuracy \
         = net.SGD(training_data[:training_set_size], num_epochs, 10, 0.5,

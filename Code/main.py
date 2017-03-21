@@ -25,10 +25,10 @@ import overfitting
 # net.SGD(training_data, 100, 10, 0.5,lmbda=0.5, evaluation_data=test_data, monitor_evaluation_accuracy=True, monitor_evaluation_cost=True
 #         , monitor_training_accuracy=True, monitor_training_cost=True)
 
-overfitting.main(filename='results.txt', num_epochs=100,
-         training_cost_xmin=200,
-         test_accuracy_xmin=200,
+overfitting.main(filename='results.txt', num_epochs=200,
+         training_cost_xmin=0,
+         test_accuracy_xmin=0,
          test_cost_xmin=0,
          training_accuracy_xmin=0,
-         training_set_size=25000,
+         training_set_size=4220,
          lmbda=0.5)

@@ -57,7 +57,7 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     net = network2.Network([85, 20, 20, 10], cost=network2.CrossEntropyCost())
     net.large_weight_initializer()
     test_cost, test_accuracy, training_cost, training_accuracy \
-        = net.SGD(training_data[:training_set_size], num_epochs, 10, 0.5,
+        = net.SGD(training_data[:training_set_size], num_epochs, 10, 2.0,
                   evaluation_data=test_data, lmbda = lmbda,
                   monitor_evaluation_cost=True, 
                   monitor_evaluation_accuracy=True, 
@@ -68,11 +68,11 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     f.close()
 
 def make_plots(filename, num_epochs, 
-               training_cost_xmin=200, 
-               test_accuracy_xmin=200, 
+               training_cost_xmin=0,
+               test_accuracy_xmin=40000,
                test_cost_xmin=0, 
-               training_accuracy_xmin=0,
-               training_set_size=1000):
+               training_accuracy_xmin=1000,
+               training_set_size=168790):
     """Load the results from ``filename``, and generate the corresponding
     plots. """
     f = open(filename, "r")
@@ -104,7 +104,7 @@ def plot_test_accuracy(test_accuracy, num_epochs, test_accuracy_xmin):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(np.arange(test_accuracy_xmin, num_epochs), 
-            [accuracy/100.0 
+            [accuracy/1687.90
              for accuracy in test_accuracy[test_accuracy_xmin:num_epochs]],
             color='#2A6EA6')
     ax.set_xlim([test_accuracy_xmin, num_epochs])
@@ -144,7 +144,7 @@ def plot_overlay(test_accuracy, training_accuracy, num_epochs, xmin,
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(np.arange(xmin, num_epochs), 
-            [accuracy/100.0 for accuracy in test_accuracy], 
+            [accuracy/1687.90 for accuracy in test_accuracy],
             color='#2A6EA6',
             label="Accuracy on the test data")
     ax.plot(np.arange(xmin, num_epochs), 
@@ -155,7 +155,7 @@ def plot_overlay(test_accuracy, training_accuracy, num_epochs, xmin,
     ax.grid(True)
     ax.set_xlim([xmin, num_epochs])
     ax.set_xlabel('Epoch')
-    ax.set_ylim([90, 100])
+    ax.set_ylim([0, 100])
     plt.legend(loc="lower right")
     plt.show()
 

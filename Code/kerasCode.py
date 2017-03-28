@@ -6,8 +6,8 @@ from keras import regularizers
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
 
-training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true 0 1 Scaled.csv')
-test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing 0 1 Scaled.csv')
+training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true copy.csv')
+test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
 
 
 model = Sequential()
@@ -18,7 +18,7 @@ model.add(Dense(20, activation='sigmoid'))
 model.add(Dense(10, activation='sigmoid'))
 
 
-sgd = SGD(lr=1.0)
+sgd = SGD(lr=0.01)
 
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
@@ -36,11 +36,14 @@ class TestCallback(Callback):
         x, y = self.test_data
         loss, acc = self.model.evaluate(x, y, verbose=1, batch_size = 10)
         print('\nTesting loss: {}, acc: {}\n'.format(loss, acc))
-        test_acc.append(acc)
+        print "LOGS ACC: ", str(logs['acc'])
+        test_acc.append(logs['acc'])
         test_cost.append(loss)
 
+# print test_output
 
-history = model.fit(training_input, training_output, epochs=13, batch_size=10, callbacks=[TestCallback((test_input, test_output))])
+
+history = model.fit(training_input, training_output, epochs=100, batch_size=10, callbacks=[TestCallback((test_input, test_output))])
 
 # print model.summary()
 

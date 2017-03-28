@@ -3,6 +3,8 @@ from keras.models import Sequential
 from keras.layers import Activation, Dense
 from keras.optimizers import SGD
 from keras import regularizers
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
 

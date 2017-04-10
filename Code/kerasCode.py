@@ -6,7 +6,7 @@ from keras import regularizers
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
 
-training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true copy.csv')
+training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true permutation new.csv')
 test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
 
 
@@ -18,7 +18,7 @@ model.add(Dense(20, activation='sigmoid'))
 model.add(Dense(10, activation='sigmoid'))
 
 
-sgd = SGD(lr=0.01)
+sgd = SGD(lr=1.0)
 
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 

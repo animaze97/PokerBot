@@ -16,11 +16,24 @@ def Gencomb(fileName):
             for permutation in x_permutations:
                 row_new = []
                 for card in permutation:
-                    row_new.append(card[0])
-                    row_new.append(card[1])
-                row_new.append(y)
+                    row_new.append(int(card[0]))
+                    row_new.append(int(card[1]))
+                row_new.append(int(y))
                 x_new.append(row_new)
-        np.savetxt("/home/arpit/Desktop/temp.csv",x_new, delimiter=",")
+        np.savetxt("../Dataset/poker-hand-training-true permutation.csv",x_new, delimiter=",", fmt='%i')
         # print list(permutations(x))
 
-Gencomb("../Dataset/poker-hand-training-true copy.csv")
+def RemoveDuplicate(fileName):
+    with open(fileName, 'r') as f:
+        reader = csv.reader(f)
+        csv_x = [[int(col) for col in row] for row in reader]
+        new_rows = []
+        for row in csv_x:
+            if row not in new_rows:
+                new_rows.append(row)
+            else:
+                print row
+        np.savetxt("../Dataset/poker-hand-training-true permutation new.csv", new_rows, delimiter=",", fmt='%i')
+
+# Gencomb("../Dataset/poker-hand-training-true copy.csv")
+RemoveDuplicate("../Dataset/poker-hand-training-true permutation.csv")

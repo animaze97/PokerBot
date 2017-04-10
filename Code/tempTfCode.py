@@ -2,13 +2,16 @@ import tensorflow as tf
 import keras_dataset_loader
 import numpy as np
 
-seed = 256
+seed = 128
 rng = np.random.RandomState(seed)
 
 
-training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true.csv')
-test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing.csv')
+# training_input, training_output = \
+#     datasetLoaderFor8Outputs.loadDataTrain('./POKER_data/original/poker-hand-training.csv')
+# test_input, test_output = datasetLoaderFor8Outputs.loadDataTest('./POKER_data/original/poker-hand-testing.csv')
 
+training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true copy.csv')
+test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
 
 def batch_creator(batch_size):
     """Create batch with random samples and return appropriate format"""
@@ -40,9 +43,9 @@ def batch_creator(batch_size):
 input_num_units = 85
 hidden_num_units1 = 20
 hidden_num_units2 = 20
-# hidden_num_units3 = 20
-# hidden_num_units4 = 20
-output_num_units = 10
+#hidden_num_units3 = 20
+#hidden_num_units4 = 20
+output_num_units = 8
 
 #define placeholders
 x= tf.placeholder(tf.float32, [None, input_num_units])
@@ -50,23 +53,23 @@ y = tf.placeholder(tf.float32, [None, output_num_units])
 
 #set other variables
 
-epochs = 150
+epochs = 3070
 batch_size = 10
-learning_rate = 0.005
+learning_rate = 0.02893
 
 weights = {
     'hidden1': tf.Variable(tf.random_normal([input_num_units, hidden_num_units1], seed=seed)),
     'hidden2': tf.Variable(tf.random_normal([hidden_num_units1, hidden_num_units2], seed=seed)),
-    # 'hidden3': tf.Variable(tf.random_normal([hidden_num_units2, hidden_num_units3], seed=seed)),
-    # 'hidden4': tf.Variable(tf.random_normal([hidden_num_units3, hidden_num_units4], seed=seed)),
+    #'hidden3': tf.Variable(tf.random_normal([hidden_num_units2, hidden_num_units3], seed=seed)),
+    #'hidden4': tf.Variable(tf.random_normal([hidden_num_units3, hidden_num_units4], seed=seed)),
     'output': tf.Variable(tf.random_normal([hidden_num_units2, output_num_units], seed=seed))
 }
 
 biases = {
     'hidden1': tf.Variable(tf.random_normal([hidden_num_units1], seed=seed)),
     'hidden2': tf.Variable(tf.random_normal([hidden_num_units2], seed=seed)),
-    # 'hidden3': tf.Variable(tf.random_normal([hidden_num_units3], seed=seed)),
-    # 'hidden4': tf.Variable(tf.random_normal([hidden_num_units4], seed=seed)),
+    #'hidden3': tf.Variable(tf.random_normal([hidden_num_units3], seed=seed)),
+    #'hidden4': tf.Variable(tf.random_normal([hidden_num_units4], seed=seed)),
     'output': tf.Variable(tf.random_normal([output_num_units], seed=seed))
 }
 
@@ -76,22 +79,22 @@ hidden_layer1 = tf.nn.relu(hidden_layer1)
 hidden_layer2 = tf.add(tf.matmul(hidden_layer1, weights['hidden2']), biases['hidden2'])
 hidden_layer2 = tf.nn.relu(hidden_layer2)
 
-# hidden_layer3 = tf.add(tf.matmul(hidden_layer2, weights['hidden3']), biases['hidden3'])
-# hidden_layer3 = tf.nn.relu(hidden_layer3)
-#
-# hidden_layer4 = tf.add(tf.matmul(hidden_layer3, weights['hidden4']), biases['hidden3'])
-# hidden_layer4 = tf.nn.relu(hidden_layer4)
+#hidden_layer3 = tf.add(tf.matmul(hidden_layer2, weights['hidden3']), biases['hidden3'])
+#hidden_layer3 = tf.nn.relu(hidden_layer3)
+
+#hidden_layer4 = tf.add(tf.matmul(hidden_layer3, weights['hidden4']), biases['hidden3'])
+#hidden_layer4 = tf.nn.relu(hidden_layer4)
 
 output_layer = tf.matmul(hidden_layer2, weights['output']) + biases['output']
 
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output_layer, labels=y))
 # cost = tf.reduce_sum(tf.square(output_layer-y), name=None)
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
-# optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
 
 init = tf.initialize_all_variables()
-
 with tf.Session() as sess:
+
     # create initialized variables
     sess.run(init)
 
@@ -102,8 +105,8 @@ with tf.Session() as sess:
     ###     find cost and reiterate to minimize
 
     for epoch in range(epochs):
-        avg_cost = 0
-        total_batch = int(25010/batch_size)
+        avg_cost = 0.0
+        total_batch = int( 25010 / batch_size)
         batch_x, batch_y = batch_creator(batch_size)
         for i in range(total_batch):
             # batch_x, batch_y = batch_creator(batch_size)
@@ -115,7 +118,7 @@ with tf.Session() as sess:
         # find predictions on val set
         pred_temp = tf.equal(tf.argmax(output_layer, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(pred_temp, "float"))
-        print "Validation Accuracy:", accuracy.eval({x: test_input, y: test_output})
+        print "Validation Accuracy:", accuracy.eval({x: training_input, y: training_output})
     print "\nTraining complete!"
 
     # find predictions on val set

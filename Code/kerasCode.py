@@ -1,28 +1,32 @@
 import keras_dataset_loader
 from keras.models import Sequential
 from keras.layers import Activation, Dense
-from keras.optimizers import SGD
+from keras.optimizers import *
 from keras import regularizers
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
+from keras import metrics
 
-training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true copy.csv')
-test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
+training_input, training_output = keras_dataset_loader.loadDataTrain('../Dataset/poker-hand-testing copy.csv')
+test_input, test_output = keras_dataset_loader.loadDataTest('../Dataset/poker-hand-training-true copy.csv')
 
 
 model = Sequential()
-model.add(Dense(20, input_dim=85, activation='sigmoid'))
-model.add(Dense(20, activation='sigmoid'))
-model.add(Dense(20, activation='sigmoid'))
-model.add(Dense(20, activation='sigmoid'))
-model.add(Dense(10, activation='sigmoid'))
+model.add(Dense(20, input_dim=85, activation='relu'))
+model.add(Dense(20, activation='relu'))
+# model.add(Dense(20, activation='sigmoid'))
+# model.add(Dense(20, activation='sigmoid'))
+model.add(Dense(10, activation='relu'))
 
 
 sgd = SGD(lr=2.0)
+rProp = RMSprop(lr=2.0)
+adam = Adam(lr=1.5)
+adadelta = adadelta(lr=1.5)
 
-model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=adadelta, metrics=['acc', metrics.categorical_accuracy()])
 
 test_cost = []
 test_acc = []
@@ -42,7 +46,7 @@ class TestCallback(Callback):
         test_cost.append(loss)
 
 
-history = model.fit(training_input, training_output, epochs=100, batch_size=40, callbacks=[TestCallback((test_input, test_output))])
+history = model.fit(training_input, training_output, epochs=150, batch_size=40, callbacks=[TestCallback((test_input, test_output))])
 
 # print model.summary()
 

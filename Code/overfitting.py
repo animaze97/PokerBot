@@ -52,17 +52,17 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     # Make results more easily reproducible
     random.seed(12345678)
     np.random.seed(12345678)
-    training_data = dataset_loader.loadDataTrain('../Dataset/temp.csv')
+    training_data = dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true permutation new.csv')
     test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
-    net = network2.Network([85, 20, 20,20, 20, 10], cost=network2.CrossEntropyCost())
+    net = network2.Network([85,20, 20, 10], cost=network2.CrossEntropyCost())
     net.large_weight_initializer()
     test_cost, test_accuracy, training_cost, training_accuracy \
         = net.SGD(training_data[:training_set_size], num_epochs, 10, 2.0,
                   evaluation_data=test_data, lmbda = lmbda,
-                  monitor_evaluation_cost=False,
+                  monitor_evaluation_cost=True,
                   monitor_evaluation_accuracy=True, 
-                  monitor_training_cost=False,
-                  monitor_training_accuracy=False)
+                  monitor_training_cost=True,
+                  monitor_training_accuracy=True)
     f = open(filename, "w")
     json.dump([test_cost, test_accuracy, training_cost, training_accuracy], f)
     f.close()
@@ -96,6 +96,7 @@ def plot_training_cost(training_cost, num_epochs, training_cost_xmin):
             color='#2A6EA6')
     ax.set_xlim([training_cost_xmin, num_epochs])
     ax.grid(True)
+    ax.set_ylim([0, 2])
     ax.set_xlabel('Epoch')
     ax.set_title('Cost on the training data')
     plt.show()
@@ -108,6 +109,7 @@ def plot_test_accuracy(test_accuracy, num_epochs, test_accuracy_xmin):
              for accuracy in test_accuracy[test_accuracy_xmin:num_epochs]],
             color='#2A6EA6')
     ax.set_xlim([test_accuracy_xmin, num_epochs])
+    ax.set_ylim([70, 100])
     ax.grid(True)
     ax.set_xlabel('Epoch')
     ax.set_title('Accuracy (%) on the test data')
@@ -121,6 +123,7 @@ def plot_test_cost(test_cost, num_epochs, test_cost_xmin):
             color='#2A6EA6')
     ax.set_xlim([test_cost_xmin, num_epochs])
     ax.grid(True)
+    ax.set_ylim([0, 2])
     ax.set_xlabel('Epoch')
     ax.set_title('Cost on the test data')
     plt.show()
@@ -135,6 +138,7 @@ def plot_training_accuracy(training_accuracy, num_epochs,
             color='#2A6EA6')
     ax.set_xlim([training_accuracy_xmin, num_epochs])
     ax.grid(True)
+    ax.set_ylim([70, 100])
     ax.set_xlabel('Epoch')
     ax.set_title('Accuracy (%) on the training data')
     plt.show()

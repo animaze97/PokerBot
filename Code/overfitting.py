@@ -52,17 +52,17 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     # Make results more easily reproducible
     random.seed(12345678)
     np.random.seed(12345678)
-    training_data = dataset_loader.loadDataTrain('../Dataset/poker-hand-training-true 0 1 Scaled increased 2.csv')
-    test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing 0 1 Scaled reduced 2.csv')
+    training_data = dataset_loader.loadDataTrain('../Dataset/temp.csv')
+    test_data = dataset_loader.loadDataTest('../Dataset/poker-hand-testing copy.csv')
     net = network2.Network([85, 20, 20,20, 20, 10], cost=network2.CrossEntropyCost())
     net.large_weight_initializer()
     test_cost, test_accuracy, training_cost, training_accuracy \
         = net.SGD(training_data[:training_set_size], num_epochs, 10, 2.0,
                   evaluation_data=test_data, lmbda = lmbda,
-                  monitor_evaluation_cost=True, 
+                  monitor_evaluation_cost=False,
                   monitor_evaluation_accuracy=True, 
-                  monitor_training_cost=True, 
-                  monitor_training_accuracy=True)
+                  monitor_training_cost=False,
+                  monitor_training_accuracy=False)
     f = open(filename, "w")
     json.dump([test_cost, test_accuracy, training_cost, training_accuracy], f)
     f.close()
@@ -104,7 +104,7 @@ def plot_test_accuracy(test_accuracy, num_epochs, test_accuracy_xmin):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(np.arange(test_accuracy_xmin, num_epochs), 
-            [accuracy/1653.78
+            [accuracy/762.93
              for accuracy in test_accuracy[test_accuracy_xmin:num_epochs]],
             color='#2A6EA6')
     ax.set_xlim([test_accuracy_xmin, num_epochs])
@@ -144,7 +144,7 @@ def plot_overlay(test_accuracy, training_accuracy, num_epochs, xmin,
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(np.arange(xmin, num_epochs), 
-            [accuracy/1653.78 for accuracy in test_accuracy],
+            [accuracy/762.93 for accuracy in test_accuracy],
             color='#2A6EA6',
             label="Accuracy on the test data")
     ax.plot(np.arange(xmin, num_epochs), 

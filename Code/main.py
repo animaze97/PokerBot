@@ -30,5 +30,5 @@ overfitting.main(filename='results.txt', num_epochs=120,
          test_accuracy_xmin=80,
          test_cost_xmin=0,
          training_accuracy_xmin=80,
-         training_set_size=7632,
+         training_set_size=230160,
          lmbda=0.5)

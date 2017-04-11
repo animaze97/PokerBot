@@ -160,6 +160,9 @@ class Network(object):
 
         startTime = time.time()
         for j in xrange(epochs):
+            if (j+1)%15 == 0:
+                eta /= 2
+                print "Eta updated to: ", eta
             random.shuffle(training_data)
             mini_batches = [
                 training_data[k:k+mini_batch_size]
@@ -273,6 +276,16 @@ class Network(object):
         else:
             results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in data]
+
+            hand = np.zeros((2,10))
+            for (x, y) in results:
+                hand[1][y] +=1
+                if x == y:
+                    hand[0][y]+=1
+
+            for index in range(0, 10):
+                print "Hand: ", index, " ", hand[0][index], " / ", hand[1][index], " : ", hand[0][index] / hand[1][index]
+
         return sum(int(x == y) for (x, y) in results)
 
     def total_cost(self, data, lmbda, convert=False):

@@ -1,6 +1,6 @@
 from random import randint
 import numpy as np
-import main
+import network2
 
 # cards array
 # suit 1-club , 2-spade , 3-heart, 4-diamond
@@ -42,6 +42,11 @@ def findX(x):
         res.extend(vectorized_result_x(x[2 * i], x[2 * i + 1]))
     return res
 
+
+def get_classified_hand(test_inputs):
+    net = network2.load("../TrainedModel/network.txt")
+    return net.feedforward(test_inputs)
+
 # Start Point
 
 noOFPlayers = 2
@@ -62,7 +67,9 @@ def classify_bot_hand(bot_hand):
         inp_arr.append(card[1])
 
     test_inputs = np.reshape(findX(inp_arr), (85, 1))
-    classified_hand = main.get_classified_hand(test_inputs)
-    print classified_hand
+    classified_hand = get_classified_hand(test_inputs)
+    classified_hand = [activation for a in classified_hand for activation in a]
+    # print classified_hand
+    return np.argmax(classified_hand)
 
-classify_bot_hand(players[0])
+classified_hand = classify_bot_hand(players[0])

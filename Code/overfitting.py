@@ -60,12 +60,13 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
         = net.SGD(training_data[:training_set_size], num_epochs, 10, 2.0,
                   evaluation_data=test_data, lmbda = lmbda,
                   monitor_evaluation_cost=True,
-                  monitor_evaluation_accuracy=True, 
+                  monitor_evaluation_accuracy=True,
                   monitor_training_cost=True,
                   monitor_training_accuracy=True)
     f = open(filename, "w")
     json.dump([test_cost, test_accuracy, training_cost, training_accuracy], f)
     f.close()
+    net.save("../Dataset/network.txt")
 
 def make_plots(filename, num_epochs, 
                training_cost_xmin=0,

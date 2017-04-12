@@ -63,7 +63,8 @@ class CrossEntropyCost(object):
 
         """
         return (a-y)
-
+    def __name__(self):
+        return "CrossEntropyCost"
 
 #### Main Network class
 class Network(object):

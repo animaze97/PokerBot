@@ -51,7 +51,7 @@ def get_classified_hand(test_inputs):
     net = network2.load("../TrainedModel/network.txt")
     return net.feedforward(test_inputs)
 
-def betting(current_bet, current_hand, risk_factor=1):
+def betting(current_bet, current_hand, risk_factor=2):
     """
     :param current_bet:
     :param current_hand:
@@ -295,7 +295,8 @@ def showdown():
     hands = []
     for x in range(num_players):
         display_hand(x)
-        hands.append(identify_current_hand(players_cards[i]))
+        print "Current Hand is Identified as:", identify_current_hand(players_cards[x])
+        hands.append(identify_current_hand(players_cards[x]))
     print players_names[np.argmax(hands)], " has won Rs.", current_pot, " !"
 
 def process_winner():

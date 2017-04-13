@@ -78,6 +78,7 @@ def get_same_rank_cards(cards):
     card_groups = []
     flag = 0
     for card in cards:
+        flag = 0
         if len(card_groups) == 0:
             card_groups.append([card])
             continue
@@ -88,7 +89,11 @@ def get_same_rank_cards(cards):
                 continue
         if flag == 0:
             card_groups.append([card])
-    return card_groups
+    relevant_groups = []
+    for group in card_groups:
+        if len(group) >= 2:
+            relevant_groups.append(group)
+    return relevant_groups
 
 def get_suite_with_max_cards(cards, is_royal=0):
     suite = np.zeros((4))
@@ -117,6 +122,7 @@ def classify_bot_hand(bot_hand):
     # print classified_hand
     return np.argmax(classified_hand)
 
+
 def discard_cards(cards, classified_hand):
     if classified_hand == 2 or classified_hand==3 or classified_hand == 6:
         groups= get_same_rank_cards(cards)
@@ -141,4 +147,7 @@ def discard_cards(cards, classified_hand):
                         pass
 
 # classified_hand = classify_bot_hand(players[0])
-print get_suite_with_max_cards([1, 14, 2, 23, 25], 1)
+# print get_suite_with_max_cards([1, 14, 2, 15, 25], 1)
+
+# print discard_cards([1, 14, 2, 15, 28], 7)
+print get_same_rank_cards([2, 15, 28, 1, 44])

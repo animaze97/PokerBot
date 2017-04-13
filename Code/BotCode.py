@@ -192,13 +192,31 @@ def identify_current_hand(cards):
     return possible_hand
 
 # Start Point
+print "WELCOME TO 5 CARD DRAW POKER!!!\n"
+print "Cards are represented as :\nsuit \n1-club \n 2-spade \n 3-heart\n 4-diamond\n Ranks 1-13\n"
 
 noOFPlayers = 2
-#noOFPlayers = raw_input("Enter no. of players : ")
+noOFPlayers = raw_input("Enter no. of players : ")
 noOFPlayers = int(noOFPlayers)
 
-players = []
-for x in range(noOFPlayers):
-    players.append(deal_hands())
+#GAME VARIABLES
+player = []
+players_names = []
+players_cards = []
+players_bets = []
+max_bet = 1
+current_pot = 0
+
+
+
+players_names[1] =  "PokeUs(Bot)"
+
+for x in range(1,noOFPlayers):
+    name = raw_input("Enter player name : ")
+    players_names.append(name)
+    players_cards.append(deal_hands())
+    print "Cards for player ",players_names[x+1],"  : "
+    for card in players_cards[x-1]:
+        print "S-",get_card_info(card)[0]," R-",get_card_info(card)[1]
 
 

@@ -47,18 +47,6 @@ def get_classified_hand(test_inputs):
     net = network2.load("../TrainedModel/network.txt")
     return net.feedforward(test_inputs)
 
-# Start Point
-
-noOFPlayers = 2
-#noOFPlayers = raw_input("Enter no. of players : ")
-noOFPlayers = int(noOFPlayers)
-
-players = []
-for x in range(noOFPlayers):
-    players.append(deal_hands())
-
-
-
 def betting(current_bet, current_hand, risk_factor=1):
     """
     :param current_bet:
@@ -95,18 +83,28 @@ def get_same_rank_cards(cards):
             relevant_groups.append(group)
     return relevant_groups
 
-def get_suite_with_max_cards(cards, is_royal=0):
+def get_suite_with_max_cards(cards, is_royal = 0):
     suite = np.zeros((4))
-    for card in cards:
-        if get_card_info(card)[1] in {1, 10, 11, 12, 13} or not is_royal:
+    if is_royal:
+        for card in cards:
+            if get_card_info(card)[1] in {1, 10, 11, 12, 13}:
+                suite[get_card_info(card)[0] - 1] += 1
+    else :
+        for card in cards:
             suite[get_card_info(card)[0] - 1] += 1
-    suite = np.argmax(suite) + 1
-    discard = []
-    for card in cards:
-        if get_card_info(card)[0] != suite:
-            discard.append(card)
-    return discard
+    return np.argmax(suite)+1
 
+def other_suit_cards(suite,cards, is_royal=0):
+    discard = []
+    if is_royal:
+        for card in cards:
+            if get_card_info(card)[0] != suite or get_card_info(card)[1] not in {1,10,11,12,13}:
+                discard.append(card)
+    else:
+        for card in cards:
+            if get_card_info(card)[0] != suite:
+                discard.append(card)
+    return discard
 
 def classify_bot_hand(bot_hand):
     card = ()
@@ -130,7 +128,7 @@ def discard_cards(cards, classified_hand):
         return list(set(cards) - set(group))
     else:
         if classified_hand == 5 or classified_hand == 9:
-            return get_suite_with_max_cards(cards, is_royal=(classified_hand == 9))
+            return other_suit_cards(get_suite_with_max_cards(cards, is_royal=(classified_hand == 9)),cards=cards)
         else:
             if classified_hand == 7:
                 groups = get_same_rank_cards(cards)
@@ -146,8 +144,61 @@ def discard_cards(cards, classified_hand):
                     if classified_hand == 4: #TODO Case 0, 1, 4 and else conditions
                         pass
 
-# classified_hand = classify_bot_hand(players[0])
-# print get_suite_with_max_cards([1, 14, 2, 15, 25], 1)
 
-# print discard_cards([1, 14, 2, 15, 28], 7)
-print get_same_rank_cards([2, 15, 28, 1, 44])
+def identify_current_hand(cards):
+    groups = get_same_rank_cards(cards)
+    groups = sorted(groups, key=len, reverse=True)
+    possible_hand = 0
+    if len(groups) == 0:
+        possible_hand = 0
+    else:
+        if len(groups) == 1:
+            if len(groups[0]) == 2: possible_hand = max(possible_hand,1)
+            else :
+                if len(groups[0]) == 3: possible_hand = max(possible_hand,3)
+                else :
+                    if len(groups[0]) == 4: possible_hand = max(possible_hand,7)
+        else:
+            if len(groups) == 2:
+               if len(groups[0]) == 3:possible_hand = max(possible_hand,6)
+               else: possible_hand = max(possible_hand,2)
+
+    if len(other_suit_cards(get_suite_with_max_cards(cards, is_royal=1),cards, is_royal=1)) == 0:
+        possible_hand = max(possible_hand,9)
+    flag = 0
+    if len(other_suit_cards(get_suite_with_max_cards(cards),cards)) == 0:
+            card_ranks = []
+            for card in cards :
+                card_ranks.append(get_card_info(card)[1])
+            card_ranks.sort()
+            for i in range(4):
+                if card_ranks[i+1] - card_ranks[i] != 1 :
+                    possible_hand = max(possible_hand,5)
+                    flag = 1
+            if flag == 0:
+                possible_hand = max(possible_hand, 8)
+
+    flag = 0
+    card_ranks = []
+    for card in cards:
+        card_ranks.append(get_card_info(card)[1])
+    card_ranks.sort()
+    for i in range(4):
+        if card_ranks[i + 1] - card_ranks[i] != 1:
+            flag = 1
+            break
+    if flag == 0 : possible_hand = max(possible_hand, 4)
+
+    return possible_hand
+
+# Start Point
+
+noOFPlayers = 2
+#noOFPlayers = raw_input("Enter no. of players : ")
+noOFPlayers = int(noOFPlayers)
+
+players = []
+for x in range(noOFPlayers):
+    players.append(deal_hands())
+
+

@@ -118,11 +118,11 @@ def classify_bot_hand(bot_hand):
     classified_hand = get_classified_hand(test_inputs)
     classified_hand = [activation for a in classified_hand for activation in a]
     # print classified_hand
-    return np.argmax(classified_hand)
+    return max(identify_current_hand(bot_hand), np.argmax(classified_hand))
 
-
+#TODO : Test discard_cards func
 def discard_cards(cards, classified_hand):
-    if classified_hand == 2 or classified_hand==3 or classified_hand == 6:
+    if classified_hand == 2 or classified_hand==3 or classified_hand == 6 or classified_hand == 0 or classified_hand == 1:
         groups= get_same_rank_cards(cards)
         group = list(itertools.chain(*groups))
         return list(set(cards) - set(group))
@@ -141,8 +141,21 @@ def discard_cards(cards, classified_hand):
                         discard = discard_cards(cards, 4)
                     return discard
                 else:
-                    if classified_hand == 4: #TODO Case 0, 1, 4 and else conditions
-                        pass
+                    if classified_hand == 4:
+                        diff = []
+                        temp_cards = cards
+                        cards.sort()
+                        max_diff = 2
+                        discard = []
+                        while max_diff > 1 or len(cards) == 1:
+                            for i in range(len(cards)-1):
+                                diff[i] = get_card_info(cards[i+1])[1] - get_card_info(cards[i])[1]
+                            diff[len(cards)-1] = get_card_info(cards[-1])[1] - get_card_info(cards[0])[1]
+                            max_diff = np.argmax(diff)
+                            if diff[max_diff] > 1:
+                                discard.append(cards[max_diff])
+                                del cards[max_diff]
+                        cards = temp_cards
 
 
 def identify_current_hand(cards):
@@ -204,19 +217,27 @@ player = []
 players_names = []
 players_cards = []
 players_bets = []
+player_chips = []
 max_bet = 1
 current_pot = 0
 
 
-
-players_names[1] =  "PokeUs(Bot)"
-
-for x in range(1,noOFPlayers):
+for x in range(noOFPlayers-1):
     name = raw_input("Enter player name : ")
     players_names.append(name)
     players_cards.append(deal_hands())
-    print "Cards for player ",players_names[x+1],"  : "
-    for card in players_cards[x-1]:
+    player_chips.append(200)
+    print "Cards for player ",players_names[x],"  : "
+    for card in players_cards[x]:
         print "S-",get_card_info(card)[0]," R-",get_card_info(card)[1]
+
+players_names[noOFPlayers-1] =  "PokeUs(Bot)"
+players_cards.append(deal_hands())
+player_chips.append(200)
+
+
+
+# Betting Round 1
+for x in range(noOFPlayers - 1):
 
 

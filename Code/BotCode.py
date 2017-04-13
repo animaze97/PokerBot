@@ -2,13 +2,12 @@ from random import randint
 import numpy as np
 import network2
 import itertools
+# Basic Info
 # cards array
 # suit 1-club , 2-spade , 3-heart, 4-diamond
 # Ranks 1-13
-cards = [x+1 for x in range(52)]
 
-# utility functions
-
+# Utility Functions
 def get_card_info(card):
     """
     #1-13 --->club
@@ -22,49 +21,17 @@ def get_card_info(card):
 def create_card(suite, rank):
     return (suite-1)*13 + rank
 
-def deal_hands(num_cards):
-    global cards
-    hands = []
-    while len(hands)!=num_cards:
-        num = randint(1,52)
-        if cards[num-1] != -1:
-            hands.append(num)
-            cards[num-1] = -1
-
-    return hands
-
 def vectorized_result_x(suit, rank):
     e = np.zeros(17)
     e[suit - 1] = 1
     e[rank + 3] = 1
     return e
 
-
 def findX(x):
     res= []
     for i in range(0, 5):
         res.extend(vectorized_result_x(x[2 * i], x[2 * i + 1]))
     return res
-
-
-def get_classified_hand(test_inputs):
-    net = network2.load("../TrainedModel/network.txt")
-    return net.feedforward(test_inputs)
-
-def betting(current_bet, current_hand, risk_factor=2):
-    """
-    :param current_bet:
-    :param current_hand:
-    :return: 0-fold, 1-call, 2-raise
-    """
-    max_possible_bets = [i * 100 * risk_factor for i in range(1, 10)]
-    if current_bet > max_possible_bets[current_hand]:
-        return "F"
-    else:
-        if 1.5*current_bet > max_possible_bets[current_hand]:
-            return "C"
-        else:
-            return "R"
 
 def get_same_rank_cards(cards):
     card_groups = []
@@ -110,6 +77,97 @@ def other_suit_cards(suite,cards, is_royal=0):
                 discard.append(card)
     return discard
 
+def display_hand(player_index):
+    global players_names, players_cards
+    print "\nCards for player",players_names[player_index]," : "
+    for card in players_cards[player_index]:
+        print "S-",get_card_info(card)[0]," R-",get_card_info(card)[1]
+
+def print_current_game_status():
+    global current_pot, max_bet, num_players, players_names, player_chips
+    print "Current Pot: ", current_pot
+    print "Maximum Bet: ", max_bet
+
+
+# Major Functions
+def process_response_round(player_index, player_response):
+    global current_pot, max_bet ,players_names, players_cards, player_chips, game_end , num_players
+    player_response = str(player_response)
+    if player_response == 'F':
+        print "\n",players_names[player_index], "has folded."
+        del players_cards[player_index]
+        del player_chips[player_index]
+        del players_names[player_index]
+        num_players -= 1
+
+        if num_players == 1:
+            print "\n",players_names[0], " has won Rs.", current_pot, " !"
+            game_end = 1
+
+    else:
+        if player_response == 'C':
+            current_pot += max_bet
+            player_chips[player_index] -= max_bet
+            print "\n",players_names[player_index], "has called."
+            print_current_game_status()
+        else:
+            if player_response == 'R':
+                current_pot += (max_bet*1.5)
+                player_chips[player_index] -= (1.5*max_bet)
+                max_bet *= 1.5
+                print "\n",players_names[player_index], " has raised to ", max_bet
+                print_current_game_status()
+
+def showdown():
+    global players_names, current_pot, players_cards, num_players
+    hands = []
+    for x in range(num_players):
+        display_hand(x)
+        print "Current Hand is Identified as:", identify_current_hand(players_cards[x])
+        hands.append(identify_current_hand(players_cards[x]))
+    print players_names[np.argmax(hands)], " has won Rs.", current_pot, " !"
+
+def process_winner():
+    global players_names, current_pot
+    if len(players_names) > 1:
+        showdown()
+    else:
+        if len(players_names) == 1:
+            display_hand(0)
+            print players_names[0], " has won Rs.", current_pot, " !"
+
+def replace_cards(player_index, cards_to_discard):
+    global players_names, players_cards
+    players_cards[player_index] = list(set(players_cards[player_index]) - set(cards_to_discard))
+    new_cards = deal_hands(len(cards_to_discard))
+    players_cards[player_index].extend(new_cards)
+    print players_names[player_index], " removed ", len(cards_to_discard), " cards."
+
+def deal_hands(num_cards):
+    global cards
+    hands = []
+    while len(hands)!=num_cards:
+        num = randint(1,52)
+        if cards[num-1] != -1:
+            hands.append(num)
+            cards[num-1] = -1
+    return hands
+
+def betting(current_bet, current_hand, risk_factor=2):
+    """
+    :param current_bet:
+    :param current_hand:
+    :return: F-fold, C-call, R-raise
+    """
+    max_possible_bets = [i * 100 * risk_factor for i in range(1, 10)]
+    if current_bet > max_possible_bets[current_hand]:
+        return "F"
+    else:
+        if 1.5*current_bet > max_possible_bets[current_hand]:
+            return "C"
+        else:
+            return "R"
+
 def classify_bot_hand(bot_hand):
     card = ()
     inp_arr = []
@@ -119,7 +177,8 @@ def classify_bot_hand(bot_hand):
         inp_arr.append(card[1])
 
     test_inputs = np.reshape(findX(inp_arr), (85, 1))
-    classified_hand = get_classified_hand(test_inputs)
+    net = network2.load("../TrainedModel/network.txt")
+    classified_hand = net.feedforward(test_inputs)
     classified_hand = [activation for a in classified_hand for activation in a]
     # print classified_hand
     return max(identify_current_hand(bot_hand), np.argmax(classified_hand))
@@ -208,164 +267,96 @@ def identify_current_hand(cards):
 
     return possible_hand
 
-# Start Point
-print "WELCOME TO 5 CARD DRAW POKER!!!\n"
-print "Cards are represented as :\nsuit \n1-club \n 2-spade \n 3-heart\n 4-diamond\n Ranks 1-13\n"
-
+#Global GAME VARIABLES
+cards = [x+1 for x in range(52)]
 num_players = 2
-num_players = raw_input("Enter no. of players : ")
-num_players = int(num_players)
-
-#GAME VARIABLES
 player = []
 players_names = []
 players_cards = []
 player_chips = []
-max_bet = 200
+max_bet = 1
 current_pot = 0
 game_end = 0
 
-def display_hand(player_index):
-    global players_names, players_cards
-    print "Cards for player ",players_names[player_index],"  : "
-    for card in players_cards[player_index]:
-        print "S-",get_card_info(card)[0]," R-",get_card_info(card)[1]
 
+def start_game():
+    # Start Point
+    global cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
+    print "WELCOME TO 5 CARD DRAW POKER!!!\n"
+    print "Cards are represented as :\nSuit:\n1-club \n2-spade \n3-heart\n4-diamond\nRank: 1-13\n"
 
-for x in range(num_players-1):
-    name = raw_input("Enter player name : ")
-    players_names.append(name)
+    num_players = raw_input("Enter no. of players : ")
+    num_players = int(num_players)
+
+    for x in range(num_players-1):
+        name = raw_input("Enter player name : ")
+        players_names.append(name)
+        players_cards.append(deal_hands(5))
+        player_chips.append(20000)
+        display_hand(x)
+        print "\n"
+
+    players_names.append("PokeUs(Bot)")
     players_cards.append(deal_hands(5))
     player_chips.append(20000)
-    display_hand(x)
 
-players_names.append("PokeUs(Bot)")
-players_cards.append(deal_hands(5))
-player_chips.append(20000)
+    # Initial pot
+    initialBet = 100
+    print players_names[0]," posts small blind of Rs ",str(initialBet)
+    current_pot += initialBet
+    player_chips[0] -= initialBet
+    max_bet = max(max_bet, initialBet)
 
-# Initial pot
-initialBet = 100
-print players_names[0]," posts small blind of Rs ",str(initialBet)
-current_pot += initialBet
-player_chips[0] -= initialBet
-
-for i in range(1, num_players):
-    print players_names[i]," posts a blind of Rs ", str(2*initialBet)
-    current_pot += (2*initialBet)
-    player_chips[i] -= 2*initialBet
-
-def print_current_game_status():
-    global current_pot, max_bet, num_players, players_names, player_chips
-    print "Current Pot: ", current_pot
-    print "Maximum Bet: ", max_bet
+    for i in range(1, num_players):
+        print players_names[i]," posts a blind of Rs ", str(2*initialBet)
+        current_pot += (2*initialBet)
+        player_chips[i] -= 2*initialBet
+        max_bet = max(max_bet, 2*initialBet)
+    print "\n"
     for x in range(num_players):
-        print "\nPlayer: ", players_names[x]
-        print "Chips remaining: ", player_chips[x]
+        print "Player: ", players_names[x]
+        print "Chips remaining: ", player_chips[x], "\n"
 
-def process_response_round(player_index, player_response):
-    global current_pot, max_bet ,players_names, players_cards, player_chips, game_end , num_players
-    player_response = str(player_response)
-    if player_response == 'F':
-        print players_names[player_index], "has folded."
-        del players_cards[player_index]
-        del player_chips[player_index]
-        del players_names[player_index]
-        num_players -= 1
+    # Round 1 Betting
+    for x in range(num_players - 1):
+        print players_names[x],". It's your turn.\n"
+        response = 'A'
+        while response not in ['C','F','R']:
+            response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
+        process_response_round(x,response)
 
-        if num_players == 1:
-            print players_names[0], " has won Rs.", current_pot, " !"
-            game_end = 1
+    bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+    process_response_round(-1,bot_response)
 
-    else:
-        if player_response == 'C':
-            current_pot += max_bet
-            player_chips[player_index] -= max_bet
-            print players_names[player_index], "has called."
-            print_current_game_status()
-        else:
-            if player_response == 'R':
-                current_pot += (max_bet*1.5)
-                player_chips[player_index] -= (1.5*max_bet)
-                max_bet *= 1.5
-                print players_names[player_index], " has raised to ", max_bet
-                print_current_game_status()
 
-def showdown():
-    global players_names, current_pot, players_cards, num_players
-    hands = []
-    for x in range(num_players):
+
+    # Round 2 Discard Card
+    for x in range(num_players - 1):
+        print "\n",players_names[x], ": Enter no. of cards to discard.(0-5): "
+        num_cards_discard = raw_input()
+        num_cards_discard = int(num_cards_discard)
+        cards_to_discard = []
+        for i in range(num_cards_discard):
+            suit = int(raw_input("Suit: "))
+            rank = int(raw_input("Rank: "))
+            cards_to_discard.append(create_card(suit, rank))
+        replace_cards(x,cards_to_discard)
         display_hand(x)
-        print "Current Hand is Identified as:", identify_current_hand(players_cards[x])
-        hands.append(identify_current_hand(players_cards[x]))
-    print players_names[np.argmax(hands)], " has won Rs.", current_pot, " !"
-
-def process_winner():
-    global players_names, current_pot
-    if len(players_names) > 1:
-        showdown()
-    else:
-        if len(players_names) == 1:
-            display_hand(0)
-            print players_names[0], " has won Rs.", current_pot, " !"
-
-def replace_cards(player_index, cards_to_discard):
-    global players_names, players_cards
-    players_cards[player_index] = list(set(players_cards[player_index]) - set(cards_to_discard))
-    new_cards = deal_hands(len(cards_to_discard))
-    players_cards[player_index].extend(new_cards)
-    print players_names[player_index], " removed ", len(cards_to_discard), " cards."
-
-
-# Betting Round 1
-for x in range(num_players - 1):
-    print players_names[x],". It's your turn.\n"
-    response = 'A'
-    while response not in ['C','F','R']:
-        response = raw_input(" Respond with : \n (C)all (R)aise (F)old")
-    process_response_round(x,response)
-
-bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
-process_response_round(-1,bot_response)
-
-print_current_game_status()
-
-# Discard Round
-
-
-for x in range(num_players - 1):
-    print players_names[x]
-    num_cards_discard = raw_input("Enter no. of cards to discard.(0-5)\n")
-    num_cards_discard = int(num_cards_discard)
-    cards_to_discard = []
-    for i in range(num_cards_discard):
-        suit = int(raw_input("card Suit: "))
-        rank = int(raw_input("Rank: "))
-
-        cards_to_discard.append(create_card(suit, rank))
-    replace_cards(x,cards_to_discard)
-    display_hand(x)
-
-# Card Discarded By Bot
-replace_cards(-1, discard_cards(players_cards[-1], classify_bot_hand(players_cards[-1])))
-
-#Betting Round 2
-for x in range(num_players - 1):
-    print players_names[x],". It's your turn.\n"
-    response = "A"
-    while response not in ["C","F","R"]:
-        response = raw_input(" Respond with : \n (C)all (R)aise (F)old")
-    process_response_round(x,response)
-
-bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
-process_response_round(-1,bot_response)
-
-print_current_game_status()
-
-print "Showdown"
-for x in range(num_players):
-    display_hand(x)
-
-process_winner()
+    # Card Discarded By Bot
+    replace_cards(-1, discard_cards(players_cards[-1], classify_bot_hand(players_cards[-1])))
 
 
 
+    #Round 3: Betting
+    for x in range(num_players - 1):
+        print players_names[x],". It's your turn.\n"
+        response = "A"
+        while response not in ["C","F","R"]:
+            response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
+        process_response_round(x,response)
+    bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+    process_response_round(-1,bot_response)
+    print "Showdown"
+    process_winner()
+
+start_game()

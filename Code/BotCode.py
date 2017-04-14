@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, shuffle
 import numpy as np
 import network2
 import itertools
@@ -103,6 +103,7 @@ def process_response_round(player_index, player_response):
         if num_players == 1:
             print "\n",players_names[0], " has won Rs.", current_pot, " !"
             game_end = 1
+            return players_names[0]
 
     else:
         if player_response == 'C':
@@ -117,6 +118,7 @@ def process_response_round(player_index, player_response):
                 max_bet *= 1.5
                 print "\n",players_names[player_index], " has raised to ", max_bet
                 print_current_game_status()
+    return -1
 
 def showdown():
     global players_names, current_pot, players_cards, num_players
@@ -126,15 +128,18 @@ def showdown():
         print "Current Hand is Identified as:", identify_current_hand(players_cards[x])
         hands.append(identify_current_hand(players_cards[x]))
     print players_names[np.argmax(hands)], " has won Rs.", current_pot, " !"
+    return players_names[np.argmax(hands)]
 
 def process_winner():
     global players_names, current_pot
     if len(players_names) > 1:
-        showdown()
+        return showdown()
     else:
         if len(players_names) == 1:
             display_hand(0)
             print players_names[0], " has won Rs.", current_pot, " !"
+            return players_names[0]
+    return -1
 
 def replace_cards(player_index, cards_to_discard):
     global players_names, players_cards
@@ -206,7 +211,7 @@ def discard_cards(cards, classified_hand):
                     if classified_hand == 4:
                         # diff = np.zeros(5)
                         temp_cards = cards
-                        cards.sort()
+                        cards.sort() #FIXME sort by rank
                         max_diff = 2
                         discard = []
                         while max_diff > 1 and len(cards) != 1:
@@ -277,9 +282,9 @@ player_chips = []
 max_bet = 1
 current_pot = 0
 game_end = 0
+winner = -1
 
-
-def start_game():
+def start_game(): #TODO initialize global variables, Check if winner is set then return winner
     # Start Point
     global cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
     print "WELCOME TO 5 CARD DRAW POKER!!!\n"
@@ -331,32 +336,118 @@ def start_game():
 
 
     # Round 2 Discard Card
-    for x in range(num_players - 1):
-        print "\n",players_names[x], ": Enter no. of cards to discard.(0-5): "
-        num_cards_discard = raw_input()
-        num_cards_discard = int(num_cards_discard)
-        cards_to_discard = []
-        for i in range(num_cards_discard):
-            suit = int(raw_input("Suit: "))
-            rank = int(raw_input("Rank: "))
-            cards_to_discard.append(create_card(suit, rank))
-        replace_cards(x,cards_to_discard)
-        display_hand(x)
-    # Card Discarded By Bot
-    replace_cards(-1, discard_cards(players_cards[-1], classify_bot_hand(players_cards[-1])))
+    if game_end == 0:
+        for x in range(num_players - 1):
+            print "\n",players_names[x], ": Enter no. of cards to discard.(0-5): "
+            num_cards_discard = raw_input()
+            num_cards_discard = int(num_cards_discard)
+            cards_to_discard = []
+            for i in range(num_cards_discard):
+                suit = int(raw_input("Suit: "))
+                rank = int(raw_input("Rank: "))
+                cards_to_discard.append(create_card(suit, rank))
+            replace_cards(x,cards_to_discard)
+            display_hand(x)
+        # Card Discarded By Bot
+        replace_cards(-1, discard_cards(players_cards[-1], classify_bot_hand(players_cards[-1])))
 
 
 
     #Round 3: Betting
-    for x in range(num_players - 1):
-        print players_names[x],". It's your turn.\n"
-        response = "A"
-        while response not in ["C","F","R"]:
-            response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
-        process_response_round(x,response)
-    bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
-    process_response_round(-1,bot_response)
-    print "Showdown"
-    process_winner()
+    if game_end == 0:
+        for x in range(num_players - 1):
+            print players_names[x],". It's your turn.\n"
+            response = "A"
+            while response not in ["C","F","R"]:
+                response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
+            process_response_round(x,response)
+        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+        process_response_round(-1,bot_response)
+        print "Showdown"
+        process_winner()
 
-start_game()
+def random_bot_game():
+    """
+        Player 0 is Random(Bot)
+        Player 1 is PokeUs(Bot)
+    """
+    global winner, cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
+
+    # Initialize global variables
+    winner = -1
+    cards = [c for c in range(1, 53)]
+    max_bet = 1
+    current_pot = 0
+    game_end = 0
+    del players_cards[:]
+    del player_chips[:]
+    del players_names[:]
+    num_players = 2
+
+    players_names.append("Random(Bot)")
+    players_cards.append(deal_hands(5))
+    player_chips.append(20000)
+    players_names.append("PokeUs(Bot)")
+    players_cards.append(deal_hands(5))
+    player_chips.append(20000)
+
+    #Initial Bet
+    initialBet = 100
+
+    current_pot += initialBet
+    player_chips[0] -= initialBet
+    max_bet = max(max_bet, initialBet)
+
+    current_pot += (2 * initialBet)
+    player_chips[1] -= 2 * initialBet
+    max_bet = max(max_bet, 2 * initialBet)
+
+
+    #Round 1: Betting
+    possible_valid_responses = ["F", "C", "R"]
+    random_bot_response = possible_valid_responses[randint(0,2)]
+    winner = process_response_round(0, random_bot_response)
+
+    if winner == -1:
+        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+        winner = process_response_round(1, bot_response)
+
+    #Round 2: Discard Cards
+    if game_end == 0 :
+        num_discard = randint(0,5)
+        shuffle(players_cards[0])
+        replace_cards(0, [players_cards[0][c] for c in range(num_discard)])
+
+        replace_cards(-1, discard_cards(players_cards[-1], classify_bot_hand(players_cards[-1])))
+
+
+    #Round 3: Betting
+    if game_end == 0 and winner == -1:
+        possible_valid_responses = ["F", "C", "R"]
+        random_bot_response = possible_valid_responses[randint(0, 2)]
+        winner = process_response_round(0, random_bot_response)
+
+        if winner == -1:
+            bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+            winner =process_response_round(1,bot_response)
+
+            if winner == -1:
+                print "Showdown"
+                winner = process_winner()
+
+    return winner
+
+#FIXME Infinite loop Case 4 discard function
+
+win = []
+win.append(0)
+win.append(0)
+for g in range(0, 100):
+    print "GAME: ", g+1
+    if random_bot_game() == "PokeUs(Bot)":
+        win[1]+=1
+    else:
+        win[0]+=1
+
+print "Random(Bot) won: ", win[0], " / ", win[0]+win[1], " : ", (float(win[0])*100)/(win[0]+win[1]), "% games"
+print "PokeUs(Bot) won: ", win[1], " / ", win[0]+win[1], " : ", (float(win[1])*100)/(win[0]+win[1]), "% games"

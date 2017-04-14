@@ -127,8 +127,11 @@ def showdown():
         display_hand(x)
         print "Current Hand is Identified as:", identify_current_hand(players_cards[x])
         hands.append(identify_current_hand(players_cards[x]))
-    print players_names[np.argmax(hands)], " has won Rs.", current_pot, " !"
-    return players_names[np.argmax(hands)]
+
+    winners = [players_names[a] for a in range(len(hands)) if hands[a] == max(hands)]
+    for winner in winners:
+        print winner, " has won Rs.", current_pot/len(winners), " !"
+    return winners
 
 def process_winner():
     global players_names, current_pot
@@ -158,13 +161,13 @@ def deal_hands(num_cards):
             cards[num-1] = -1
     return hands
 
-def betting(current_bet, current_hand, risk_factor=2):
+def betting(current_bet, current_hand, risk_factor=1):
     """
     :param current_bet:
     :param current_hand:
     :return: F-fold, C-call, R-raise
     """
-    max_possible_bets = [i * 100 * risk_factor for i in range(1, 10)]
+    max_possible_bets = [i * 500 * risk_factor for i in range(1, 10)]
     if current_bet > max_possible_bets[current_hand]:
         return "F"
     else:
@@ -297,7 +300,7 @@ def identify_current_hand(cards):
 #Global GAME VARIABLES
 cards = [x+1 for x in range(52)]
 num_players = 2
-player = []
+#player_status = [] # active/folded
 players_names = []
 players_cards = []
 player_chips = []
@@ -306,9 +309,23 @@ current_pot = 0
 game_end = 0
 winner = -1
 
+
 def start_game(): #TODO initialize global variables, Check if winner is set then return winner
     # Start Point
-    global cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
+    global winner, cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
+
+    # Initialize global variables
+    winner = -1
+    cards = [c for c in range(1, 53)]
+    max_bet = 1
+    current_pot = 0
+    game_end = 0
+    del players_cards[:]
+    del player_chips[:]
+    del players_names[:]
+    del player_status[:]
+    num_players = 2
+
     print "WELCOME TO 5 CARD DRAW POKER!!!\n"
     print "Cards are represented as :\nSuit:\n1-club \n2-spade \n3-heart\n4-diamond\nRank: 1-13\n"
 
@@ -329,16 +346,17 @@ def start_game(): #TODO initialize global variables, Check if winner is set then
 
     # Initial pot
     initialBet = 100
-    print players_names[0]," posts small blind of Rs ",str(initialBet)
-    current_pot += initialBet
-    player_chips[0] -= initialBet
-    max_bet = max(max_bet, initialBet)
+    # print players_names[0]," posts small blind of Rs ",str(initialBet)
+    # current_pot += initialBet
+    # player_chips[0] -= initialBet
+    # max_bet = max(max_bet, initialBet)
 
-    for i in range(1, num_players):
-        print players_names[i]," posts a blind of Rs ", str(2*initialBet)
-        current_pot += (2*initialBet)
-        player_chips[i] -= 2*initialBet
-        max_bet = max(max_bet, 2*initialBet)
+    print "The Game starts with an ante of Rs.",str(initialBet)
+
+    for i in range(0, num_players):
+        current_pot += (initialBet)
+        player_chips[i] -= initialBet
+        max_bet = max(max_bet, initialBet)
     print "\n"
     for x in range(num_players):
         print "Player: ", players_names[x]
@@ -350,10 +368,12 @@ def start_game(): #TODO initialize global variables, Check if winner is set then
         response = 'A'
         while response not in ['C','F','R']:
             response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
-        process_response_round(x,response)
-
-    bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
-    process_response_round(-1,bot_response)
+        winner = process_response_round(x,response)
+        if winner != -1:
+            break
+    if winner == -1:
+        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+        winner = process_response_round(-1,bot_response)
 
 
 
@@ -382,11 +402,16 @@ def start_game(): #TODO initialize global variables, Check if winner is set then
             response = "A"
             while response not in ["C","F","R"]:
                 response = raw_input("Respond with (C)all/(R)aise/(F)old: ")
-            process_response_round(x,response)
-        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
-        process_response_round(-1,bot_response)
-        print "Showdown"
-        process_winner()
+            winner = process_response_round(x,response)
+            if winner != -1:
+                break
+        if winner == -1:
+            bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+            winner = process_response_round(-1,bot_response)
+        if winner == -1:
+            print "Showdown"
+            process_winner()
+
 
 def random_bot_game():
     """
@@ -420,9 +445,9 @@ def random_bot_game():
     player_chips[0] -= initialBet
     max_bet = max(max_bet, initialBet)
 
-    current_pot += (2 * initialBet)
-    player_chips[1] -= 2 * initialBet
-    max_bet = max(max_bet, 2 * initialBet)
+    current_pot += initialBet
+    player_chips[1] -= initialBet
+    max_bet = max(max_bet,  initialBet)
 
 
     #Round 1: Betting
@@ -463,12 +488,30 @@ def random_bot_game():
 win = []
 win.append(0)
 win.append(0)
-for g in range(0, 100):
+money = []
+money.append(0)
+money.append(0)
+for g in range(0, 1000):
     print "GAME: ", g+1
-    if random_bot_game() == "PokeUs(Bot)":
-        win[1]+=1
+    money[0] -= 20000
+    money[1] -= 20000
+    win_value = random_bot_game()
+    money[0]+=player_chips[0]
+    money[1]+=player_chips[1] #FIXME don't delete player when fold
+    if win_value == "PokeUs(Bot)":
+        win[1] += 1
+        money[1]+=current_pot
     else:
-        win[0]+=1
+        if len(win_value) == 2:
+            win[0]+=0.5
+            win[1]+=0.5
+            money[0]+=(current_pot/2)
+            money[1]+=(current_pot/2)
+        else:
+            win[0]+=1
+            money[0] += current_pot
 
 print "Random(Bot) won: ", win[0], " / ", win[0]+win[1], " : ", (float(win[0])*100)/(win[0]+win[1]), "% games"
+print "Random(Bot) won: Rs.", money[0]
 print "PokeUs(Bot) won: ", win[1], " / ", win[0]+win[1], " : ", (float(win[1])*100)/(win[0]+win[1]), "% games"
+print "PokeUs(Bot) won: Rs.", money[1]

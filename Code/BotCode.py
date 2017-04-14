@@ -209,22 +209,44 @@ def discard_cards(cards, classified_hand):
                     return discard
                 else:
                     if classified_hand == 4:
+
+                        discard = []
+
+                        #Keep one copy from repeated in pairs
+                        same_rank_cards = get_same_rank_cards(cards)
+                        for rank_cards in same_rank_cards:
+                            del rank_cards[0]
+                        #Remove same Cards from the main card set after grouping
+                        group = list(itertools.chain(*same_rank_cards))
+                        cards = list(set(cards)-set(group))
+
+                        discard.extend(group)
+
                         # diff = np.zeros(5)
                         temp_cards = cards
-                        cards.sort() #FIXME sort by rank
+                        # print sorted(cards, cmp=highRank)
+                        cards = sorted(cards, cmp=highRank)
                         max_diff = 2
-                        discard = []
+
                         while max_diff > 1 and len(cards) != 1:
                             diff = np.zeros(len(cards)-1)
                             for i in range(len(cards)-1):
                                 diff[i] = get_card_info(cards[i+1])[1] - get_card_info(cards[i])[1]
                             # diff[len(cards)-1] = get_card_info(cards[-1])[1] - get_card_info(cards[0])[1]
-                            max_diff = np.argmax(diff)+1
-                            if diff[max_diff-1] > 1:
-                                discard.append(cards[max_diff])
-                                del cards[max_diff]
+                            max_diff = np.argmax(diff)
+                            if diff[max_diff] > 1:
+                                discard.append(cards[max_diff+1])
+                                del cards[max_diff+1]
+                            #changing Max Diff to monitor the maxDiffference at that index
+                            max_diff = diff[max_diff]
                         cards = temp_cards
                         return discard
+
+def highRank(a, b):
+    if get_card_info(a)[1] > get_card_info(b)[1]:
+        return 1
+    return -1
+    # return get_card_info(a)[1] > get_card_info(b)[1]
 
 def identify_current_hand(cards):
     groups = get_same_rank_cards(cards)
@@ -437,7 +459,6 @@ def random_bot_game():
 
     return winner
 
-#FIXME Infinite loop Case 4 discard function
 
 win = []
 win.append(0)

@@ -169,14 +169,14 @@ def deal_hands(num_cards):
             cards[num-1] = -1
     return hands
 
-def betting(current_bet, current_hand, risk_factor=10000, has_called = 0):
+def betting(current_bet, current_hand, risk_factor=1, has_called = 0):
     """
     :param current_bet:
     :param current_hand:
     :return: F-fold, C-call, R-raise
     """
     global player_status
-    max_possible_bets = [i * 500 * risk_factor for i in range(1, 10)]
+    max_possible_bets = [500 + (i * 500 * risk_factor) for i in range(1, 10)]
     if current_bet > max_possible_bets[current_hand]:
         return "F"
     else:

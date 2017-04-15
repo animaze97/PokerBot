@@ -1,6 +1,7 @@
 from random import randint, shuffle
 import numpy as np
 from math import ceil
+from sklearn.linear_model import SGDClassifier
 
 import network2
 import itertools
@@ -331,6 +332,15 @@ def game_bet_round():
         winner = process_response_round(-1, bot_response)
     return winner
 
+#Classifier
+clf = SGDClassifier(eta0=0.5, n_iter=1, verbose=1)
+clf.partial_fit([[2, 3, 700, 1900]], [0], classes=[0, 1, 2])
+clf.partial_fit([[4, 5, 900, 100]], [1])
+print clf.predict([[2, 3, 700, 100]])
+
+# def updateModel():
+
+
 #Global GAME VARIABLES
 cards = [x+1 for x in range(52)]
 num_players = 2
@@ -567,5 +577,5 @@ def evaluate_bot_with_random_bot():
 
 
 
-evaluate_bot_with_random_bot()
+# evaluate_bot_with_random_bot()
 # start_game()

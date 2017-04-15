@@ -2,9 +2,10 @@ from random import randint, shuffle
 import numpy as np
 from math import ceil
 from sklearn.linear_model import SGDClassifier
-
+import csv
 import network2
 import itertools
+import pickle
 # Basic Info
 # cards array
 # suit 1-club , 2-spade , 3-heart, 4-diamond
@@ -128,7 +129,7 @@ def process_response_round(player_index, player_response):
     return -1
 
 def showdown():
-    global players_names, current_pot, players_cards, num_players
+    global players_names, current_pot, players_cards, num_players,winner
     hands = []
     for x in range(num_players):
         display_hand(x)
@@ -139,7 +140,8 @@ def showdown():
     if len(winners) > 1:
         print "Game Tied, pot split equally"
     else:
-        print winner, " has won Rs.", current_pot/len(winners), " !"
+        winner = winners[0]
+        print winners[0], " has won Rs.", current_pot, " !"
     return winners
 
 def process_winner():
@@ -170,22 +172,36 @@ def deal_hands(num_cards):
             cards[num-1] = -1
     return hands
 
+
 def betting(current_bet, current_hand, risk_factor=1, has_called = 0):
     """
     :param current_bet:
     :param current_hand:
     :return: F-fold, C-call, R-raise
     """
-    global player_status
-    max_possible_bets = [500 + (i * 500 * risk_factor) for i in range(1, 10)]
-    if current_bet > max_possible_bets[current_hand]:
-        return "F"
+    # global player_status
+    # max_possible_bets = [500 + (i * 500 * risk_factor) for i in range(1, 10)]
+    # if current_bet > max_possible_bets[current_hand]:
+    #     return "F"
+    # else:
+    #     if 1.5*current_bet < max_possible_bets[current_hand] and has_called == 0:
+    #         return "R"
+    #     else:
+    #         player_status[-1] = 1
+    #         return "C"
+    global player_raise_count, player_status
+    decision_map = {0: "R", 1: "C", 2: "F"}
+    result = decision_map[predict_model([current_hand, classify_bot_hand(players_cards[-1]), current_pot, player_chips[-1]])]
+    if result == "C":
+        player_status[-1] = 1
     else:
-        if 1.5*current_bet < max_possible_bets[current_hand] and has_called == 0:
-            return "R"
-        else:
-            player_status[-1] = 1
-            return "C"
+        if result == "R":
+            player_raise_count[-1]+=1
+            if player_raise_count[-1] > 4:
+                result = "C"
+                player_status[-1] = 1
+    print "Model Decision: ", result
+    return result
 
 
 def classify_bot_hand(bot_hand):
@@ -332,14 +348,40 @@ def game_bet_round():
         winner = process_response_round(-1, bot_response)
     return winner
 
-#Classifier
-clf = SGDClassifier(eta0=0.5, n_iter=1, verbose=1)
-clf.partial_fit([[2, 3, 700, 1900]], [0], classes=[0, 1, 2])
-clf.partial_fit([[4, 5, 900, 100]], [1])
-print clf.predict([[2, 3, 700, 100]])
+#Model for Bot Betting Decision Scipy
+clf = SGDClassifier()
+# clf = SGDClassifier(eta0=0.5, n_iter=1, verbose=1)
 
-# def updateModel():
+with open('../TrainedModel/classifierPlay.pkl', 'rb') as fid:
+    clf = pickle.load(fid)
 
+# clf.partial_fit([[2, 3, 700, 1900]], [0], classes=[0, 1, 2])
+# clf.partial_fit([[4, 5, 900, 100]], [1])
+# print clf.predict([[2, 3, 700, 100]])
+
+def saveClassifier():
+    with open('../TrainedModel/classifierPlay.pkl', 'wb') as fid:
+        pickle.dump(clf, fid)
+
+def train_data_collection(updates):
+    global train
+    train.extend(updates)
+
+def update_model(updates):
+    for update in updates:
+        X = update[0]
+        Y = update[1]
+        clf.partial_fit([X], [Y], classes=[0, 1, 2])
+        # writer.writerow([1, 2,3 ].append(([1])[0]))
+
+def predict_model(X):
+    return clf.predict([X])[0]
+
+def initializeClassifier():
+    clf = SGDClassifier(eta0=1.0, n_iter=1, verbose=0)
+    clf.partial_fit([[2, 3, 700, 1900]], [0], classes=[0, 1, 2])
+    with open('../TrainedModel/classifierPlay.pkl', 'wb') as fid:
+        pickle.dump(clf, fid)
 
 #Global GAME VARIABLES
 cards = [x+1 for x in range(52)]
@@ -353,6 +395,11 @@ game_end = 0
 winner = -1
 chips = 0
 player_status = [] #has_not_called/has_called  - 0/1
+random_bot_history = []
+poke_us_bot_history = []
+game_num = 0
+player_raise_count = [0,0]
+train = []
 
 def start_game():
     # Start Point
@@ -445,9 +492,10 @@ def random_bot_game():
         Player 0 is Random(Bot)
         Player 1 is PokeUs(Bot)
     """
-    global player_status, chips, winner, cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end
+    global player_raise_count,player_status, chips, winner, cards, num_players, player, players_names, players_cards, player_chips, max_bet, current_pot, game_end,random_bot_history, poke_us_bot_history
 
     # Initialize global variables
+    decision_history_map = {'R': 0,'C':1, 'F':2 }
     winner = -1
     cards = [c for c in range(1, 53)]
     max_bet = 1
@@ -457,6 +505,10 @@ def random_bot_game():
     del player_chips[:]
     del players_names[:]
     del player_status[:]
+    del poke_us_bot_history[:]
+    del random_bot_history[:]
+    del player_raise_count[:]
+    player_raise_count = [0,0]
     num_players = 2
 
     players_names.append("Random(Bot)")
@@ -483,21 +535,35 @@ def random_bot_game():
     while sum(player_status) != 2 and game_end == 0:
 
         if player_status[0] == 0:
-            possible_valid_responses = ["R", "C", "F"]
+            possible_valid_responses = ['R', 'C','F']
             random_bot_response = possible_valid_responses[randint(0, 2)]
         else :
-            possible_valid_responses = ["C", "F"]
+            possible_valid_responses = ['C', 'F']
             random_bot_response = possible_valid_responses[randint(0, 1)]
         if random_bot_response == 'C':
             player_status[0] = 1
+        if random_bot_response == 'R':
+            player_raise_count[0] += 1
+            if player_raise_count[0] > 4:
+                random_bot_response = "C"
+                player_status[0] = 1
+        # history variables
+        X_random = [identify_current_hand(players_cards[0]),classify_bot_hand(players_cards[0]),current_pot,player_chips[0]]
+        Y_random = [decision_history_map[random_bot_response]]
+        random_bot_history.append([X_random,Y_random])
 
         winner = process_response_round(0, random_bot_response)
 
         if winner == -1:
             bot_response = betting(max_bet, identify_current_hand(players_cards[-1]),player_status[-1])
+            X_poke_us = [identify_current_hand(players_cards[0]),classify_bot_hand(players_cards[0]),current_pot,player_chips[0]]
+            Y_poke_us = [decision_history_map[bot_response]]
+            poke_us_bot_history.append([X_poke_us,Y_poke_us])
+
             winner = process_response_round(1, bot_response)
 
     player_status = [0 for p in player_status]
+    player_raise_count = [0 for p in player_raise_count]
 
     #Round 2: Discard Cards
     if game_end == 0 :
@@ -513,18 +579,33 @@ def random_bot_game():
         while sum(player_status) != 2 and game_end == 0:
 
             if player_status[0] == 0:
-                possible_valid_responses = ["R", "C", "F"]
+                possible_valid_responses = ['R', 'C', 'F']
                 random_bot_response = possible_valid_responses[randint(0, 2)]
             else:
-                possible_valid_responses = ["C", "F"]
+                possible_valid_responses = ['C', 'F']
                 random_bot_response = possible_valid_responses[randint(0, 1)]
             if random_bot_response == 'C':
                 player_status[0] = 1
+            if random_bot_response == 'R':
+                player_raise_count[0] += 1
+                if player_raise_count[0] > 4:
+                    random_bot_response = "C"
+                    player_status[0] = 1
+            # history variables
+            X_random = [identify_current_hand(players_cards[0]), classify_bot_hand(players_cards[0]), current_pot,
+                        player_chips[0]]
+            Y_random = [decision_history_map[random_bot_response]]
+            random_bot_history.append([X_random, Y_random])
 
             winner = process_response_round(0, random_bot_response)
 
             if winner == -1:
                 bot_response = betting(max_bet, identify_current_hand(players_cards[-1]),player_status[-1])
+                X_poke_us = [identify_current_hand(players_cards[0]), classify_bot_hand(players_cards[0]), current_pot,
+                             player_chips[0]]
+                Y_poke_us = [decision_history_map[bot_response]]
+                poke_us_bot_history.append([X_poke_us, Y_poke_us])
+
                 winner =process_response_round(1,bot_response)
 
         if winner == -1:
@@ -534,6 +615,7 @@ def random_bot_game():
     return winner
 
 def evaluate_bot_with_random_bot():
+    global game_num, winner, poke_us_bot_history, random_bot_history, players_names, player_chips, current_pot
     win = []
     win.append(0)
     win.append(0)
@@ -541,21 +623,27 @@ def evaluate_bot_with_random_bot():
     money = []
     money.append(0)
     money.append(0)
-    for g in range(0, 10000):
-        print "GAME: ", g+1
+    for g in range(0, 1000):
+        game_num = g+1
+        print "GAME: ", game_num
         money[0] -= 20000
         money[1] -= 20000
         win_value = random_bot_game()
         if len(players_names) == 2:
             money[0]+=player_chips[0]
             money[1]+=player_chips[1]
+            # t = poke_us_bot_history.extend(random_bot_history)
+            # print "This is extended: ", t
+            train_data_collection(poke_us_bot_history + random_bot_history)
         else:
             if players_names[0] == "PokeUs(Bot)":
                 money[0] += chips
                 money[1] += player_chips[0]
+                train_data_collection(poke_us_bot_history)
             else:
                 money[0] += player_chips[0]
                 money[1] += chips
+                train_data_collection(random_bot_history)
 
         if len(win_value) == 2:
             win[2]+=1
@@ -569,6 +657,8 @@ def evaluate_bot_with_random_bot():
                 win[0]+=1
                 money[0] += current_pot
 
+    # update_model(train)
+    # saveClassifier()
     print "Random(Bot) won: ", win[0], " / ", win[0]+win[1]+win[2], " : ", (float(win[0])*100)/(win[0]+win[1]+win[2]), "% games"
     print "Random(Bot) won: Rs.", money[0]
     print "PokeUs(Bot) won: ", win[1], " / ", win[0]+win[1]+win[2], " : ", (float(win[1])*100)/(win[0]+win[1]+win[2]), "% games"
@@ -577,5 +667,6 @@ def evaluate_bot_with_random_bot():
 
 
 
-# evaluate_bot_with_random_bot()
+evaluate_bot_with_random_bot()
 # start_game()
+# initializeClassifier()

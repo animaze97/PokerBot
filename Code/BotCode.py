@@ -169,20 +169,23 @@ def deal_hands(num_cards):
             cards[num-1] = -1
     return hands
 
-def betting(current_bet, current_hand, risk_factor=10000):
+def betting(current_bet, current_hand, risk_factor=10000, has_called = 0):
     """
     :param current_bet:
     :param current_hand:
     :return: F-fold, C-call, R-raise
     """
+    global player_status
     max_possible_bets = [i * 500 * risk_factor for i in range(1, 10)]
     if current_bet > max_possible_bets[current_hand]:
         return "F"
     else:
-        if 1.5*current_bet > max_possible_bets[current_hand]:
-            return "C"
-        else:
+        if 1.5*current_bet < max_possible_bets[current_hand] and has_called == 0:
             return "R"
+        else:
+            player_status[-1] = 1
+            return "C"
+
 
 def classify_bot_hand(bot_hand):
     card = ()
@@ -322,7 +325,7 @@ def game_bet_round():
         if winner != -1:
             break
     if winner == -1:
-        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+        bot_response = betting(max_bet, identify_current_hand(players_cards[-1]),player_status[-1])
         if bot_response == 'C':
             player_status[-1] = 1
         winner = process_response_round(-1, bot_response)
@@ -331,7 +334,6 @@ def game_bet_round():
 #Global GAME VARIABLES
 cards = [x+1 for x in range(52)]
 num_players = 2
-#player_status = [] # active/folded
 players_names = []
 players_cards = []
 player_chips = []
@@ -340,7 +342,7 @@ current_pot = 0
 game_end = 0
 winner = -1
 chips = 0
-player_status = [] #has_called 0/1
+player_status = [] #has_not_called/has_called  - 0/1
 
 def start_game():
     # Start Point
@@ -469,12 +471,20 @@ def random_bot_game():
 
     #Round 1: Betting
     while sum(player_status) != 2 and game_end == 0:
-        possible_valid_responses = ["R", "C", "F"]
-        random_bot_response = possible_valid_responses[randint(0,2)]
+
+        if player_status[0] == 0:
+            possible_valid_responses = ["R", "C", "F"]
+            random_bot_response = possible_valid_responses[randint(0, 2)]
+        else :
+            possible_valid_responses = ["C", "F"]
+            random_bot_response = possible_valid_responses[randint(0, 1)]
+        if random_bot_response == 'C':
+            player_status[0] = 1
+
         winner = process_response_round(0, random_bot_response)
 
         if winner == -1:
-            bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+            bot_response = betting(max_bet, identify_current_hand(players_cards[-1]),player_status[-1])
             winner = process_response_round(1, bot_response)
 
     player_status = [0 for p in player_status]
@@ -491,12 +501,20 @@ def random_bot_game():
     #Round 3: Betting
     if game_end == 0 and winner == -1:
         while sum(player_status) != 2 and game_end == 0:
-            possible_valid_responses = ["F", "C", "R"]
-            random_bot_response = possible_valid_responses[randint(0, 2)]
+
+            if player_status[0] == 0:
+                possible_valid_responses = ["R", "C", "F"]
+                random_bot_response = possible_valid_responses[randint(0, 2)]
+            else:
+                possible_valid_responses = ["C", "F"]
+                random_bot_response = possible_valid_responses[randint(0, 1)]
+            if random_bot_response == 'C':
+                player_status[0] = 1
+
             winner = process_response_round(0, random_bot_response)
 
             if winner == -1:
-                bot_response = betting(max_bet, identify_current_hand(players_cards[-1]))
+                bot_response = betting(max_bet, identify_current_hand(players_cards[-1]),player_status[-1])
                 winner =process_response_round(1,bot_response)
 
         if winner == -1:
